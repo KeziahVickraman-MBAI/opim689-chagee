@@ -1,6 +1,6 @@
 export type Scenario = 'conservative' | 'base' | 'aggressive';
 
-export type TabId = 'market-entry' | 'demand-forecast' | 'membership-signal';
+export type TabId = 'market-entry' | 'demand-forecast' | 'membership-signal' | 'for-lee-yen';
 
 export interface SimilarityFactors {
   demographicFit: number;      // 0 - 100

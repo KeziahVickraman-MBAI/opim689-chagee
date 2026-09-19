@@ -17,6 +17,7 @@ import { Header } from './components/Header';
 import { TabMarketEntry } from './components/TabMarketEntry';
 import { TabDemandForecast } from './components/TabDemandForecast';
 import { TabMembershipSignal } from './components/TabMembershipSignal';
+import { TabForLeeYen } from './components/TabForLeeYen';
 import { Footer } from './components/Footer';
 
 export default function App() {
@@ -162,6 +163,10 @@ export default function App() {
             baseUncertaintyPct={forecastData.baseUncertaintyPct}
             onNavigateToForecast={() => setActiveTab('demand-forecast')}
           />
+        )}
+
+        {activeTab === 'for-lee-yen' && (
+          <TabForLeeYen onNavigateTab={setActiveTab} />
         )}
       </main>
 

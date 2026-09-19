@@ -1,6 +1,6 @@
 import React from 'react';
 import { TabId, NewMarket, ExistingMarket, Scenario } from '../types';
-import { Compass, TrendingUp, Smartphone, Sparkles, ArrowRightLeft } from 'lucide-react';
+import { Compass, TrendingUp, Smartphone, Sparkles, ArrowRightLeft, MessageSquare } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: TabId;
@@ -122,6 +122,22 @@ export const Header: React.FC<HeaderProps> = ({
                 membershipAvailable ? 'bg-[#0060DF] text-[#FFFFFF]' : 'bg-[#4B3012] text-[#FBD38D]'
               }`}>
                 {membershipAvailable ? 'Active Signals' : 'Cold Start'}
+              </span>
+            </button>
+
+            <button
+              id="tab-for-lee-yen-btn"
+              onClick={() => onSelectTab('for-lee-yen')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
+                activeTab === 'for-lee-yen'
+                  ? 'bg-[#0047BA] text-[#FFFFFF] shadow border border-[#7BA4F5]/60'
+                  : 'text-[#B8D0F3] hover:text-[#FFFFFF] hover:bg-[#0D2E68]'
+              }`}
+            >
+              <MessageSquare className={`w-4 h-4 ${activeTab === 'for-lee-yen' ? 'text-[#F3DE96]' : 'text-[#7D9ECB]'}`} />
+              <span>4. For Lee Yen</span>
+              <span className="px-1.5 py-0.2 text-[10px] rounded bg-[#D4AF37]/25 text-[#F3DE96] border border-[#D4AF37]/40 font-medium">
+                Discussion Guide
               </span>
             </button>
           </nav>

@@ -1,0 +1,6 @@
+{
+  "name": "Tea Expansion Demand Forecaster",
+  "description": "Cold-start demand forecasting and market similarity prototype for premium tea beverage retail expansion.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

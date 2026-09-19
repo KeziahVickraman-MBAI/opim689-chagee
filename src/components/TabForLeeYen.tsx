@@ -7,8 +7,10 @@ import {
   Database,
   ArrowUpRight,
   HelpCircle,
+  GraduationCap,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Info
 } from 'lucide-react';
 
 interface TabForLeeYenProps {
@@ -18,41 +20,76 @@ interface TabForLeeYenProps {
 export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => {
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
-      {/* Header Discussion Overview Card */}
-      <div className="bg-[#FFFFFF] rounded-2xl p-6 sm:p-8 border border-[#D9E4F5] shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#EAF0FA] pb-6">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#0047BA] mb-1">
-              <MessageSquare className="w-4 h-4 text-[#D4AF37]" />
-              <span>Industry Discussion Companion</span>
-            </div>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-[#0A2146]">
-              Discussion Guide: For Lee Yen
-            </h1>
-            <p className="text-sm sm:text-base text-[#465E7E] mt-1.5 max-w-3xl leading-relaxed">
-              This discussion companion bridges our prototype's quantitative modeling mechanics with
-              grounded operational reality — outlining focal inquiries across supply chain, store operations,
-              and consumer intelligence for a conversation with an industry insider.
+      {/* ══════════════════════════════════════════════════════════
+          PROJECT PRIMER SECTION (Top of Tab 4)
+          Softer background tone, scannable in under 30s
+          ══════════════════════════════════════════════════════════ */}
+      <div className="bg-[#F6F9FE] rounded-2xl p-6 sm:p-8 border border-[#CCE0F7] shadow-xs relative overflow-hidden">
+        {/* Subtle accent corner glow */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-[#0047BA]/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative">
+          {/* Label Tag */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#E7F0FD] text-[#0047BA] border border-[#BFD8FA]">
+              <GraduationCap className="w-3.5 h-3.5 text-[#0047BA]" />
+              Project Primer
+            </span>
+            <span className="text-xs text-[#5C799D] hidden sm:inline">•</span>
+            <span className="text-xs text-[#5C799D] hidden sm:inline">SMU MBAI Course Project Context</span>
+          </div>
+
+          {/* Header */}
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-[#0A2146] mb-4">
+            Quick Context — What This Project Is
+          </h1>
+
+          {/* Body Text */}
+          <div className="space-y-3.5 text-sm sm:text-[15px] text-[#2D496E] leading-relaxed">
+            <p>
+              This is a group project for an <strong>MBAI (Master of Business Administration in AI)</strong> course at <strong>SMU</strong>, focused on online marketplaces and intelligent retail operations. The assignment asks us to pick a company with an online presence, identify a core operational problem that AI could meaningfully enhance, and propose a solution with a sized business benefit.
+            </p>
+            <p>
+              We're looking at Chagee through the lens of <strong>online marketplace dynamics</strong> — membership, loyalty, and demand signal — but applied to what's fundamentally a <strong>brick-and-mortar expansion problem</strong>: opening physical stores in brand-new markets. That combination is what makes it interesting — Chagee has digital/membership infrastructure (an 'online' layer) but the actual expansion risk lives in the physical world (site selection, staffing, inventory for a store that doesn't exist yet).
+            </p>
+            <p className="text-xs sm:text-sm text-[#4E6C92] pt-1">
+              This prototype is an early, illustrative mockup — not built on real Chagee data — meant to spark discussion about whether we're circling a real operational challenge, not a finished proposal.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-[#F1F6FD] border border-[#D5E3F7] px-4 py-2.5 rounded-xl text-xs text-[#244574] self-start md:self-auto shrink-0">
-            <BookOpen className="w-4 h-4 text-[#0047BA]" />
-            <span className="font-medium">3 Core Modules • 9 Field Questions</span>
+          {/* Companion Quick Links Bar */}
+          <div className="mt-5 pt-4 border-t border-[#D6E5F8] flex flex-wrap items-center justify-between gap-3 text-xs text-[#426189]">
+            <div className="flex items-center gap-2">
+              <Info className="w-4 h-4 text-[#0047BA]" />
+              <span className="font-medium">3 discussion modules below link directly into the prototype tabs:</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onNavigateTab('market-entry')}
+                className="px-2.5 py-1 rounded-md bg-[#FFFFFF] hover:bg-[#EBF3FE] text-[#0047BA] font-medium border border-[#CCE0F7] transition"
+              >
+                Tab 1: Market Entry
+              </button>
+              <button
+                onClick={() => onNavigateTab('demand-forecast')}
+                className="px-2.5 py-1 rounded-md bg-[#FFFFFF] hover:bg-[#EBF3FE] text-[#0047BA] font-medium border border-[#CCE0F7] transition"
+              >
+                Tab 2: Forecast
+              </button>
+              <button
+                onClick={() => onNavigateTab('membership-signal')}
+                className="px-2.5 py-1 rounded-md bg-[#FFFFFF] hover:bg-[#EBF3FE] text-[#0047BA] font-medium border border-[#CCE0F7] transition"
+              >
+                Tab 3: Membership
+              </button>
+            </div>
           </div>
-        </div>
-
-        {/* Framing callout */}
-        <div className="mt-5 p-4 rounded-xl bg-[#F8FAFD] border border-[#DCE7F7] flex items-start gap-3">
-          <HelpCircle className="w-5 h-5 text-[#0047BA] shrink-0 mt-0.5" />
-          <p className="text-xs sm:text-sm text-[#3E5C85] leading-relaxed">
-            <strong>Companion Objective:</strong> Use each section below to cross-examine how the theoretical cold-start
-            algorithms implemented in Tabs 1–3 align with actual enterprise practices in new country expansions.
-          </p>
         </div>
       </div>
 
-      {/* SECTION 1 — Supply Chain (links to "Market Entry" tab) */}
+      {/* ══════════════════════════════════════════════════════════
+          SECTION 1 — Supply Chain (links to "Market Entry" tab)
+          ══════════════════════════════════════════════════════════ */}
       <div className="bg-[#FFFFFF] rounded-2xl p-6 sm:p-8 border border-[#D9E4F5] shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#EAF0FA]">
           <div className="flex items-center gap-3">
@@ -64,7 +101,7 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
                 Section 1 • Sourcing & Distribution
               </div>
               <h2 className="font-display text-xl font-bold text-[#0A2146]">
-                Supply Chain & Inventory Pre-Planning
+                Supply Chain — Physical Inventory Meets New-Market Risk
               </h2>
             </div>
           </div>
@@ -134,7 +171,9 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
         </div>
       </div>
 
-      {/* SECTION 2 — Operations (links to "Demand Forecast" tab) */}
+      {/* ══════════════════════════════════════════════════════════
+          SECTION 2 — Operations (links to "Demand Forecast" tab)
+          ══════════════════════════════════════════════════════════ */}
       <div className="bg-[#FFFFFF] rounded-2xl p-6 sm:p-8 border border-[#D9E4F5] shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#EAF0FA]">
           <div className="flex items-center gap-3">
@@ -146,7 +185,7 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
                 Section 2 • Store Dynamics & Economics
               </div>
               <h2 className="font-display text-xl font-bold text-[#0A2146]">
-                Operations, Staffing & Unit Economics
+                Operations — Opening a Store With No Local Track Record
               </h2>
             </div>
           </div>
@@ -216,7 +255,9 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
         </div>
       </div>
 
-      {/* SECTION 3 — Data Available for Forecasting (links to "Membership Signal" tab) */}
+      {/* ══════════════════════════════════════════════════════════
+          SECTION 3 — Data Available for Forecasting (links to "Membership Signal" tab)
+          ══════════════════════════════════════════════════════════ */}
       <div className="bg-[#FFFFFF] rounded-2xl p-6 sm:p-8 border border-[#D9E4F5] shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#EAF0FA]">
           <div className="flex items-center gap-3">
@@ -228,7 +269,7 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
                 Section 3 • Digital Infrastructure & Signals
               </div>
               <h2 className="font-display text-xl font-bold text-[#0A2146]">
-                Data Available for Cold-Start Forecasting
+                Membership Data — The 'Online' Signal Behind a Brick-and-Mortar Decision
               </h2>
             </div>
           </div>

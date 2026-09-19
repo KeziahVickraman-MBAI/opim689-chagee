@@ -1,15 +1,13 @@
 import React from 'react';
 import { TabId } from '../types';
 import {
-  MessageSquare,
   Truck,
+  TrendingUp,
+  Package,
   Layers,
   Database,
   ArrowUpRight,
-  HelpCircle,
   GraduationCap,
-  Sparkles,
-  BookOpen,
   Info
 } from 'lucide-react';
 
@@ -52,16 +50,77 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
             <p>
               We're looking at Chagee through the lens of <strong>online marketplace dynamics</strong> — membership, loyalty, and demand signal — but applied to what's fundamentally a <strong>brick-and-mortar expansion problem</strong>: opening physical stores in brand-new markets. That combination is what makes it interesting — Chagee has digital/membership infrastructure (an 'online' layer) but the actual expansion risk lives in the physical world (site selection, staffing, inventory for a store that doesn't exist yet).
             </p>
-            <p className="text-xs sm:text-sm text-[#4E6C92] pt-1">
-              This prototype is an early, illustrative mockup — not built on real Chagee data — meant to spark discussion about whether we're circling a real operational challenge, not a finished proposal.
-            </p>
           </div>
+
+          {/* Key Themes We're Exploring — 3 Compact Cards in a Row */}
+          <div className="mt-6 pt-5 border-t border-[#D9E6F7]">
+            <div className="text-xs font-bold uppercase tracking-wider text-[#0047BA] mb-3">
+              Key Themes We're Exploring
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              {/* Theme 1: Supply */}
+              <div className="bg-[#FFFFFF] rounded-xl p-4 border border-[#D5E3F7] shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#EAF2FE] text-[#0047BA] flex items-center justify-center border border-[#CADCF5] shrink-0">
+                      <Truck className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-xs font-bold text-[#0A2146] uppercase tracking-wide">
+                      Theme 1 — Supply
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#3E5C85] leading-relaxed">
+                    How ingredient sourcing and supplier decisions get made when entering a market with no prior demand history — and whether AI could inform sourcing allocation ahead of a store's first sale.
+                  </p>
+                </div>
+              </div>
+
+              {/* Theme 2: Demand Forecasting */}
+              <div className="bg-[#FFFFFF] rounded-xl p-4 border border-[#D5E3F7] shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#EAF2FE] text-[#0047BA] flex items-center justify-center border border-[#CADCF5] shrink-0">
+                      <TrendingUp className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-xs font-bold text-[#0A2146] uppercase tracking-wide">
+                      Theme 2 — Demand Forecasting
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#3E5C85] leading-relaxed">
+                    Predicting how a new store will perform before it opens, using patterns from markets Chagee already operates in — the core 'cold start' problem behind rapid multi-market expansion.
+                  </p>
+                </div>
+              </div>
+
+              {/* Theme 3: Inventory Management */}
+              <div className="bg-[#FFFFFF] rounded-xl p-4 border border-[#D5E3F7] shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#EAF2FE] text-[#0047BA] flex items-center justify-center border border-[#CADCF5] shrink-0">
+                      <Package className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-xs font-bold text-[#0A2146] uppercase tracking-wide">
+                      Theme 3 — Inventory Management
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#3E5C85] leading-relaxed">
+                    Translating a demand forecast into concrete opening-week decisions — how much stock to hold, how to avoid early-stage waste or stockouts while a new market's real demand is still unknown.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Closing Note */}
+          <p className="text-xs sm:text-sm text-[#4E6C92] mt-4 italic bg-[#EFF5FD] p-3 rounded-xl border border-[#D5E3F7]">
+            "This prototype is an early, illustrative mockup — not built on real Chagee data — meant to spark discussion about whether we're circling a real operational challenge, not a finished proposal."
+          </p>
 
           {/* Companion Quick Links Bar */}
           <div className="mt-5 pt-4 border-t border-[#D6E5F8] flex flex-wrap items-center justify-between gap-3 text-xs text-[#426189]">
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-[#0047BA]" />
-              <span className="font-medium">3 discussion modules below link directly into the prototype tabs:</span>
+              <span className="font-medium">Direct navigation to prototype modules:</span>
             </div>
             <div className="flex items-center gap-2">
               <button

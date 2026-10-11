@@ -1,5 +1,5 @@
 import React from 'react';
-import { TabId } from '../types';
+import { SectionId } from '../types';
 import {
   Truck,
   TrendingUp,
@@ -11,15 +11,15 @@ import {
   Info
 } from 'lucide-react';
 
-interface TabForLeeYenProps {
-  onNavigateTab: (tab: TabId) => void;
+interface ValidationQuestionsProps {
+  onNavigateTab: (section: SectionId) => void;
 }
 
-export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => {
+export const ValidationQuestions: React.FC<ValidationQuestionsProps> = ({ onNavigateTab }) => {
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       {/* ══════════════════════════════════════════════════════════
-          PROJECT PRIMER SECTION (Top of Tab 4)
+          PROJECT PRIMER SECTION
           Softer background tone, scannable in under 30s
           ══════════════════════════════════════════════════════════ */}
       <div className="bg-[#F6F9FE] rounded-2xl p-6 sm:p-8 border border-[#CCE0F7] shadow-xs relative overflow-hidden">
@@ -39,8 +39,11 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
 
           {/* Header */}
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-[#0A2146] mb-4">
-            Quick Context — What This Project Is
+            Validation questions — for the industry discussion with Lee Yen
           </h1>
+          <p className="text-sm text-[#7A5A0E] bg-[#FDF5E1] border border-[#EAD8AC] rounded-lg px-3 py-2 mb-4">
+            Secondary reference, not an operational step. These questions test the assumptions behind the four gates; answers should replace assumptions, never confirm a preferred recommendation.
+          </p>
 
           {/* Body Text */}
           <div className="space-y-3.5 text-sm sm:text-[15px] text-[#2D496E] leading-relaxed">
@@ -120,26 +123,26 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
           <div className="mt-5 pt-4 border-t border-[#D6E5F8] flex flex-wrap items-center justify-between gap-3 text-xs text-[#426189]">
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-[#0047BA]" />
-              <span className="font-medium">Direct navigation to prototype modules:</span>
+              <span className="font-medium">Related prototype gates:</span>
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => onNavigateTab('market-entry')}
+                onClick={() => onNavigateTab('provision')}
                 className="px-2.5 py-1 rounded-md bg-[#FFFFFF] hover:bg-[#EBF3FE] text-[#0047BA] font-medium border border-[#CCE0F7] transition"
               >
-                Tab 1: Market Entry
+                Provision
               </button>
               <button
-                onClick={() => onNavigateTab('demand-forecast')}
+                onClick={() => onNavigateTab('counter')}
                 className="px-2.5 py-1 rounded-md bg-[#FFFFFF] hover:bg-[#EBF3FE] text-[#0047BA] font-medium border border-[#CCE0F7] transition"
               >
-                Tab 2: Forecast
+                Counter
               </button>
               <button
-                onClick={() => onNavigateTab('membership-signal')}
+                onClick={() => onNavigateTab('predict')}
                 className="px-2.5 py-1 rounded-md bg-[#FFFFFF] hover:bg-[#EBF3FE] text-[#0047BA] font-medium border border-[#CCE0F7] transition"
               >
-                Tab 3: Membership
+                Predict
               </button>
             </div>
           </div>
@@ -166,10 +169,10 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
           </div>
 
           <button
-            onClick={() => onNavigateTab('market-entry')}
+            onClick={() => onNavigateTab('provision')}
             className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#F0F5FD] text-[#0047BA] hover:bg-[#E1ECFB] transition border border-[#CDE0F9] self-start sm:self-auto"
           >
-            <span>Refer to Tab 1 (Market Entry)</span>
+            <span>See Provision</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -177,10 +180,10 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
         {/* Section Header Note */}
         <div className="mt-5 p-4 rounded-xl bg-[#09224E] text-[#F3F7FD] border border-[#193F7D] shadow-xs">
           <div className="text-[11px] font-bold uppercase tracking-wider text-[#F3DE96] mb-1">
-            Prompted by Tab 1 Mechanics:
+            Prompted by the Provision gate:
           </div>
           <p className="text-sm font-serif-body italic text-[#FFFFFF] leading-relaxed">
-            "The Market Entry tab assumes ingredient sourcing/inventory gets pre-planned based on market similarity — is that close to reality?"
+            "The Provision gate sizes the opening fresh-milk order from a demand band, with generic milk costs and shelf life — is that close to how opening stock is actually planned?"
           </p>
         </div>
 
@@ -250,10 +253,10 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
           </div>
 
           <button
-            onClick={() => onNavigateTab('demand-forecast')}
+            onClick={() => onNavigateTab('counter')}
             className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#F0F5FD] text-[#0047BA] hover:bg-[#E1ECFB] transition border border-[#CDE0F9] self-start sm:self-auto"
           >
-            <span>Refer to Tab 2 (Demand Forecast)</span>
+            <span>See Counter</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -261,10 +264,10 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
         {/* Section Header Note */}
         <div className="mt-5 p-4 rounded-xl bg-[#09224E] text-[#F3F7FD] border border-[#193F7D] shadow-xs">
           <div className="text-[11px] font-bold uppercase tracking-wider text-[#F3DE96] mb-1">
-            Prompted by Tab 2 Mechanics:
+            Prompted by the Counter gate:
           </div>
           <p className="text-sm font-serif-body italic text-[#FFFFFF] leading-relaxed">
-            "The Demand Forecast tab outputs a recommended opening inventory, staffing level, and break-even week — curious how close that is to how these decisions actually get made."
+            "The Counter gate compares all-human, mixed and all-machine counters on cost per cup, service time and lost orders — curious how close that is to how counter format and staffing actually get decided."
           </p>
         </div>
 
@@ -334,10 +337,10 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
           </div>
 
           <button
-            onClick={() => onNavigateTab('membership-signal')}
+            onClick={() => onNavigateTab('predict')}
             className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#F0F5FD] text-[#0047BA] hover:bg-[#E1ECFB] transition border border-[#CDE0F9] self-start sm:self-auto"
           >
-            <span>Refer to Tab 3 (Membership Signal)</span>
+            <span>See Predict</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -345,10 +348,10 @@ export const TabForLeeYen: React.FC<TabForLeeYenProps> = ({ onNavigateTab }) => 
         {/* Section Header Note */}
         <div className="mt-5 p-4 rounded-xl bg-[#09224E] text-[#F3F7FD] border border-[#193F7D] shadow-xs">
           <div className="text-[11px] font-bold uppercase tracking-wider text-[#F3DE96] mb-1">
-            Prompted by Tab 3 Mechanics:
+            Prompted by the Predict gate:
           </div>
           <p className="text-sm font-serif-body italic text-[#FFFFFF] leading-relaxed">
-            "The Membership Signal tab assumes pre-launch app/loyalty data can sharpen a forecast before a store even opens — wanted to check if that kind of data actually exists and gets used this way."
+            "The Predict gate assumes pre-launch app/loyalty data could narrow the demand band before a store opens — wanted to check if that kind of data actually exists and gets used this way."
           </p>
         </div>
 

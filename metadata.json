@@ -1,6 +1,6 @@
 {
-  "name": "Tea Expansion Demand Forecaster",
-  "description": "Cold-start demand forecasting and market similarity prototype for premium tea beverage retail expansion.",
+  "name": "Chagee Expansion Lab",
+  "description": "Illustrative store-opening decision prototype (synthetic data): predict, provision, counter, review.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

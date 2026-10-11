@@ -4,7 +4,7 @@
   body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: #0F2137;
-    background-color: #F6F9FD;
+    background-color: #F7F3EA;
   }
 }
 
@@ -20,3 +20,18 @@
 input[type=range] {
   accent-color: #0043A8;
 }
+
+body { background-color: #F7F3EA; }
+
+details > summary::-webkit-details-marker { display: none; }
+
+@media print {
+  @page { margin: 14mm; }
+  body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  table, tr { break-inside: avoid; }
+}
+
+/* Visible keyboard focus on every interactive element, including chart marks (SVG). */
+:focus-visible { outline: 3px solid #D4AF37; outline-offset: 2px; border-radius: 4px; }
+svg :focus-visible { outline: none; }   /* chart marks draw their own gold focus ring */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }

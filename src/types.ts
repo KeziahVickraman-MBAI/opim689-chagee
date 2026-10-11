@@ -1,12 +1,22 @@
-export type Scenario = 'conservative' | 'base' | 'aggressive';
+import type { EngineInputs } from './model/engine.js';
 
-export type TabId = 'market-entry' | 'demand-forecast' | 'membership-signal' | 'for-lee-yen';
+export type SectionId = 'predict' | 'provision' | 'counter' | 'review' | 'questions' | 'summary';
+export type Setup = 'all_human' | 'mixed' | 'all_machine';
 
+/* Pair similarity factors, each 0-100 where 100 = target and benchmark alike on that dimension. */
 export interface SimilarityFactors {
-  demographicFit: number;      // 0 - 100
-  competitiveDensity: number;  // 0 - 100 (e.g. density index / saturation level)
-  incomeLevel: number;         // 0 - 100 (economic purchasing power proximity)
-  urbanDensity: number;        // 0 - 100 (foot traffic & mall/transit density)
+  demographicFit: number;
+  competitiveDensity: number;   // similarity of competitive conditions, not the amount of competition
+  incomeLevel: number;
+  urbanDensity: number;
+}
+
+/* Synthetic 0-100 market profile used only to derive pair similarity baselines. */
+export interface MarketProfile {
+  youthAffinity: number;
+  competitiveIntensity: number;
+  incomeLevel: number;
+  urbanDensity: number;
 }
 
 export interface NewMarket {
@@ -16,11 +26,9 @@ export interface NewMarket {
   flag: string;
   defaultExistingMarketId: string;
   membershipAvailableDefault: boolean;
-  baselineFactors: SimilarityFactors;
+  profile: MarketProfile;
   cityTier: string;
-  typicalTicketUSD: number;
   initialAppPreRegs: number;
-  initialSocialScore: number;
   initialWaitlist: number;
   marketContext: string;
 }
@@ -30,50 +38,32 @@ export interface ExistingMarket {
   name: string;
   country: string;
   flag: string;
-  matureWeeklyCups: number;
-  avgTicketUSD: number;
   storeFormat: string;
-  operatingCostWeeklyUSD: number;
   brandMaturityYears: number;
+  profile: MarketProfile;
   notes: string;
 }
 
-export interface MembershipSignals {
-  dataAvailable: boolean;
-  appPreRegistrations: number; // e.g. 0 to 50,000
-  socialInterestScore: number; // 0 to 100
-  waitlistSignups: number;     // 0 to 25,000
-}
+export type Inputs = EngineInputs;
 
-export interface ForecastPoint {
+export interface ObservedWeek {
   week: number;
-  label: string;
-  baseVolume: number;
-  upperBound: number;
-  lowerBound: number;
-  weeklyRevenue: number;
-  cumulativeRevenue: number;
-  cumulativeCost: number;
-  isBreakEven: boolean;
+  cups: number;
+  repeatShare: number;
+  medianServeSec: number;
+  milkWasteL: number;
+  lostOrdersPerDay: number;
 }
 
-export interface RecommendedOutputs {
-  inventory: {
-    teaLeavesKg: number;
-    dairyLiters: number;
-    cupsAndStrawsUnits: number;
-    bufferPercentage: number;
-  };
-  staffing: {
-    totalOpeningStaff: number;
-    peakBaristasPerShift: number;
-    prepAndLeadCount: number;
-    estimatedShiftHoursWeekly: number;
-  };
-  financials: {
-    breakEvenWeek: number; // 1-12 or 13 (beyond 12 weeks)
-    breakEvenUnits: number;
-    projectedFirstMonthCups: number;
-    uncertaintyBandwidthPct: number;
-  };
+export interface Scenario {
+  id: string;
+  name: string;
+  updatedAt: string;
+  origin: 'assumptions' | 'observed';
+  targetMarketId: string;
+  benchmarkMarketId: string;
+  factors: SimilarityFactors;
+  inputs: Inputs;
+  actuals: ObservedWeek[];   // Review: starts as the synthetic example, editable
+  actualsSynthetic: boolean; // true until a user edits a cell
 }

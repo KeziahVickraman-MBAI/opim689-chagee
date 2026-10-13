@@ -1,11 +1,14 @@
 import React, { useId } from 'react';
 import { AlertTriangle, CheckCircle2, Info, Loader2, RefreshCw } from 'lucide-react';
 import type { PartStatus } from '../state/analysis';
+import { ROLES, type Role } from '../content/deck';
 
 /* ---------- formatting: currency and units always explicit ---------- */
 export const sgd = (v: number, d = 2) => `${v < 0 ? '−' : ''}S$${Math.abs(v).toLocaleString('en-SG', { minimumFractionDigits: d, maximumFractionDigits: d })}`;
 export const sgd0 = (v: number) => sgd(v, 0);
 export const sgdK = (v: number) => (Math.abs(v) >= 1e6 ? `${v < 0 ? '−' : ''}S$${(Math.abs(v) / 1e6).toFixed(2)}m` : Math.abs(v) >= 1e4 ? `${v < 0 ? '−' : ''}S$${(Math.abs(v) / 1e3).toFixed(1)}k` : sgd0(v));
+/* Appendix A4 style, as in deck/revenue_cost.md: whole thousands, negatives in brackets. */
+export const sgdThousands = (v: number) => { const t = `S$${Math.round(Math.abs(v) / 1e3).toLocaleString('en-SG')}k`; return v < 0 && Math.round(Math.abs(v) / 1e3) > 0 ? `(${t})` : t; };
 export const int = (v: number) => Math.round(v).toLocaleString('en-SG');
 export const pct = (v: number, d = 0) => `${(v * 100).toFixed(d)}%`;
 export const num = (v: number, d = 2) => v.toLocaleString('en-SG', { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -33,38 +36,67 @@ export const Card: React.FC<{ title?: React.ReactNode; kicker?: string; classNam
     </section>
   );
 
-/* The four questions every gate answers. */
+/* Gate card, in the deck's structure: decision, evidence, suggested action, trade-off, what the model cannot
+ * establish, who does what, and (expandable) how it is calculated. */
 export const DecisionFrame: React.FC<{
-  gate: string; when: string; who: string; decision: string;
-  inputs: React.ReactNode; suggests: React.ReactNode; checks: React.ReactNode[]; status?: PartStatus;
-}> = ({ gate, when, who, decision, inputs, suggests, checks, status }) => (
-  <div className="rounded-2xl bg-[#0A2558] text-white p-5 sm:p-6 border border-[#1A3D80]">
+  gate: string; when: string; roles: Role[]; decision: string; evidence: [string, React.ReactNode][];
+  action: React.ReactNode; tradeoff: React.ReactNode; limitation: React.ReactNode;
+  actions: [Role, React.ReactNode][]; calc?: React.ReactNode[]; status?: PartStatus;
+}> = ({ gate, when, roles, decision, evidence, action, tradeoff, limitation, actions, calc, status }) => (
+  <section aria-label={`${gate} gate card`} className="rounded-2xl bg-[#0A2558] text-white p-5 sm:p-6 border border-[#1A3D80]">
     <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wider">
       <span className="px-2 py-0.5 rounded bg-[#D4AF37]/25 text-[#F3DE96] border border-[#D4AF37]/50">{gate}</span>
       <span className="text-[#A8C4ED]">{when}</span>
-      <span className="text-[#5E7FB8]">·</span>
-      <span className="text-[#A8C4ED] normal-case tracking-normal font-normal">{who}</span>
+      {roles.map(r => <RoleChip key={r} role={r} dark />)}
     </div>
-    <div className="mt-4 grid gap-4 md:grid-cols-4">
-      <FrameCell q="What decision am I making?"><p className="font-serif-body text-[15px] leading-snug">{decision}</p></FrameCell>
-      <FrameCell q="What inputs support it?"><div className="text-sm text-[#DCE7F8] leading-snug">{inputs}</div></FrameCell>
-      <FrameCell q="What does the model suggest?">
-        <div className="text-sm leading-snug">
-          {status && status !== 'current' && <div className="mb-1"><StatusBadge status={status} dark /></div>}
-          <div className={status === 'stale' ? 'opacity-60' : ''}>{suggests}</div>
-        </div>
+    <p className="mt-3 font-serif-body text-lg leading-snug">{decision}</p>
+    <div className="mt-4 grid gap-4 md:grid-cols-3">
+      <FrameCell q="Evidence">
+        <dl className="text-sm grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+          {evidence.map(([k, v]) => <React.Fragment key={k}><dt className="text-[#A8C4ED]">{k}</dt><dd className="font-semibold tabular-nums">{v}</dd></React.Fragment>)}
+        </dl>
       </FrameCell>
-      <FrameCell q="What must be checked before acting?">
-        <ul className="text-sm text-[#DCE7F8] space-y-1 list-disc pl-4 leading-snug">{checks.map((c, i) => <li key={i}>{c}</li>)}</ul>
+      <FrameCell q="Suggested action">
+        {status && status !== 'current' && <div className="mb-1"><StatusBadge status={status} dark /></div>}
+        <div className={`text-sm leading-snug ${status === 'stale' ? 'opacity-60' : ''}`}>{action}</div>
+      </FrameCell>
+      <FrameCell q="Trade-off">
+        <p className="text-sm text-[#DCE7F8] leading-snug">{tradeoff}</p>
       </FrameCell>
     </div>
-  </div>
+    <div className="mt-4 grid gap-4 md:grid-cols-[1fr_2fr]">
+      <FrameCell q="What the model cannot establish">
+        <p className="text-sm text-[#F6D9A8] leading-snug">{limitation}</p>
+      </FrameCell>
+      <FrameCell q="Who does what">
+        <ul className="text-sm text-[#DCE7F8] space-y-1.5 leading-snug">
+          {actions.map(([r, t], i) => <li key={i} className="flex gap-2 items-start"><RoleChip role={r} dark /><span>{t}</span></li>)}
+        </ul>
+      </FrameCell>
+    </div>
+    {calc && calc.length > 0 && (
+      <details className="mt-4 group">
+        <summary className="cursor-pointer select-none text-xs font-semibold text-[#F3DE96] list-none flex items-center gap-1.5">
+          <span className="inline-block transition-transform group-open:rotate-90" aria-hidden>▸</span>How it is calculated
+        </summary>
+        <ul className="mt-2 text-xs text-[#C9D8F2] space-y-1 list-disc pl-5 leading-relaxed">{calc.map((c, i) => <li key={i}>{c}</li>)}</ul>
+      </details>
+    )}
+  </section>
 );
 const FrameCell: React.FC<{ q: string; children: React.ReactNode }> = ({ q, children }) => (
-  <div className="md:border-l md:border-[#24488C] md:pl-4 first:border-0 first:pl-0">
+  <div className="md:border-l md:border-[#24488C] md:pl-4 first:border-0 first:pl-0 min-w-0">
     <div className="text-[11px] font-bold uppercase tracking-wider text-[#F3DE96] mb-1.5">{q}</div>
     {children}
   </div>
+);
+
+const ROLE_TONE: Record<Role, string> = {
+  entry: 'bg-[#DCE8FB] text-[#16397A]', crm: 'bg-[#EDE3F6] text-[#5B2C83]', supply: 'bg-[#DFF3EE] text-[#0B5B51]',
+  format: 'bg-[#FBEFD5] text-[#6B4E0B]', ops: 'bg-[#F4E3DD] text-[#7A2E19]',
+};
+export const RoleChip: React.FC<{ role: Role; dark?: boolean }> = ({ role }) => (
+  <span className={`inline-flex shrink-0 items-center px-2 py-0.5 rounded-full text-[10.5px] font-semibold normal-case tracking-normal ${ROLE_TONE[role]}`}>{ROLES[role]}</span>
 );
 
 /* ---------- status ---------- */

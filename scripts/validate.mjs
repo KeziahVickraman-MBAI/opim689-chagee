@@ -64,6 +64,15 @@ ok("pipeline avoided cost equals deck bn_counter", close(bn.pipeline.total, deck
 ok("one-time signal stock term equals deck bn_stock", close(bn.oneTime.perOpeningSignal * bn.oneTime.openings, 200 * (D.provision.none.optTotal - D.provision.def.optTotal)),
    `S$${f(bn.oneTime.perOpeningSignal * 200 / 1e3, 1)}k one-time`);
 
+/* 2b. Appendix A4 business case reproduces deck/revenue_cost.md (deck c92cfd6) */
+const bc = E.businessCase(ctx, s0, bn);
+ok("A4: counter saving per store-year S$2,277 and stock S$370 per opening", Math.round(bc.perStore) === 2277 && Math.round(bc.perOpen) === 370,
+   `S$${f(bc.perStore, 0)} · S$${f(bc.perOpen, 0)}`);
+ok("A4: 5-year cumulative net S$289k, payback in year 5", Math.round(bc.cum / 1e3) === 289 && bc.payback === 5, `S$${f(bc.cum / 1e3, 1)}k, year ${bc.payback}`);
+ok("A4: year 1 total cost S$1,518k, benefit S$302k", Math.round(bc.years[0].cost / 1e3) === 1518 && Math.round(bc.years[0].benefit / 1e3) === 302);
+const sens = E.businessSensitivity(ctx, s0, bn).map(r => Math.round(r.cum / 1e3));
+ok("A4: sensitivity cases match (289, -465, -2558, -1493 S$k)", JSON.stringify(sens) === JSON.stringify([289, -465, -2558, -1493]), sens.join(", "));
+
 /* 3. combined inputs drive the verdict (no "any threshold crossed" rule) */
 const sHi = { ...s0, wage: 16.5 };                    // past the one-variable wage threshold (~S$15.97)
 const sLo = { ...s0, wage: 16.5, machineMonth: 2200 };  // same wage, but a dearer machine

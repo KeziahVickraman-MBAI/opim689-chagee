@@ -1,18 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { RotateCcw, Copy } from 'lucide-react';
-import { A } from '../model/ctx';
-import { inputMeta, observedBandPrefill, summariseActuals, SYNTHETIC_ACTUALS, SETUP_LABEL, SETUPS } from '../model/engine.js';
+import { A, ctx } from '../model/ctx';
+import { inputMeta, observedBandPrefill, summariseActuals, SYNTHETIC_ACTUALS, SETUP_LABEL, SETUPS, predict, provision, businessCase, businessSensitivity } from '../model/engine.js';
 import type { ScenarioStore } from '../state/scenarios';
-import type { Analysis } from '../state/analysis';
+import { cachedCounter, type Analysis } from '../state/analysis';
 import type { ObservedWeek } from '../types';
-import type { SetupKey } from '../model/engine.js';
-import { Card, DecisionFrame, Explain, Flag, NumberField, Slider, Stale, StatusBadge, Stat, int, pct, num, sgd, sgd0, sgdK, secToMin } from '../ui/kit';
+import type { SetupKey, BusinessYear, CounterResult } from '../model/engine.js';
+import { Card, DecisionFrame, Explain, Flag, NumberField, Slider, Stale, StatusBadge, Stat, int, pct, num, sgd, sgd0, sgdK, sgdThousands, secToMin } from '../ui/kit';
 import { ForecastChart, PipelineChart } from '../ui/charts';
 
 const META = inputMeta(A);
 const CELL_LABEL: Record<string, string> = { cups: 'cups sold that week', repeatShare: 'repeat-customer share, percent', medianServeSec: 'median time to serve, seconds',
   milkWasteL: 'milk wasted, litres', lostOrdersPerDay: 'lost orders per day' };
 const U_STRONG = A.demand.uncertainty_strong_signal.value;
+const verdictLabel = (c: CounterResult) => (c.verdict.tie ? `Too close to call (${SETUP_LABEL[c.verdict.winner]} vs ${SETUP_LABEL[c.verdict.runnerUp]})`
+  : `${SETUP_LABEL[c.verdict.winner]}, by ${sgd(c.verdict.margin, 3)} a cup`);
 
 export const Review: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ store, an }) => {
   const { active: sc, setInput, update } = store;
@@ -35,6 +37,7 @@ export const Review: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ store
 
   const applyObserved = () => store.duplicate(`${sc.name.replace(/ · observed$/, '')} · observed`, {
     origin: 'observed',
+    basedOn: sc.basedOn ?? sc.id,
     inputs: {
       ...i,
       baseCupsPerDay: form.steady, memberUpliftPct: 0, touristUpliftPct: 0, uOverride: form.u, removeHype: true,
@@ -47,20 +50,43 @@ export const Review: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ store
   const modelLostDay = c && used ? c.setups[used].lostShare * pr.steadyCupsPerDay : null;
   const modelWasteWeek = prov.recommended.wasteLitres * 7 / prov.horizon;
 
+  // Review compares an observed scenario with the plan it was created from.
+  const orig = useMemo(() => {
+    const o = sc.basedOn ? store.scenarios.find(x => x.id === sc.basedOn) : undefined;
+    if (!o) return null;
+    const opr = predict(ctx, o.inputs);
+    return { sc: o, pr: opr, prov: provision(ctx, o.inputs, opr), ctr: cachedCounter(o.inputs) };
+  }, [sc.basedOn, store.scenarios, an.counter.data]);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Appendix A4, from this scenario's benefit.
+  const bc = useMemo(() => businessCase(ctx, i, bn), [i, bn]);
+  const sens = useMemo(() => businessSensitivity(ctx, i, bn), [i, bn]);
+
   return (
     <div className="space-y-6">
       <DecisionFrame
-        gate="Gate 4 · Review" when="After opening" who="Operations, market-entry leads"
-        decision="Was the forecast right, and should the counter or stock policy change now that steady demand is known?"
-        inputs={<>Observed weekly cups, repeat share, service times, milk waste and lost orders (synthetic here); the same model, rerun on observed inputs.</>}
-        status={an.counter.status}
-        suggests={obs ? <>Steady demand observed at <b className="text-white">{int(obs.steadyCupsPerDay)} cups/day</b> vs {int(pr.steadyCupsPerDay)} forecast
-          ({obs.steadyCupsPerDay >= pr.steady.low / 7 && obs.steadyCupsPerDay <= pr.steady.high / 7 ? 'inside' : 'outside'} the band). Rerun the counter on it before adding machines.</> : 'Enter post-hype weeks to compare.'}
-        checks={[
-          'Use post-hype weeks only; opening crowds are not steady demand.',
-          'A few weeks of one store understate uncertainty; keep a floor on the band.',
-          'Observed service times test the staffing approximation; large gaps mean recalibrate.',
-          'There is no live data connection; values are entered by hand.',
+        gate="Gate 4 · Review" when="After opening" roles={['ops', 'entry', 'supply', 'format']} status={an.counter.status}
+        decision="After real sales arrive, does the plan still hold?"
+        evidence={[
+          ['Feeds the model', 'steady sales · wage · machine quote · milk costs'],
+          ['Check by hand', 'service times · lost orders · waste and stockouts of every item vs plan'],
+          ['Observed steady sales', obs ? `${int(obs.steadyCupsPerDay)} cups/day vs ${int(pr.steadyCupsPerDay)} planned` : 'enter post-hype weeks'],
+        ]}
+        action={<>Create an updated scenario using observed inputs and compare it with the original plan.
+          {obs ? <> Observed steady demand is {obs.steadyCupsPerDay >= pr.steady.low / 7 && obs.steadyCupsPerDay <= pr.steady.high / 7 ? 'inside' : 'outside'} the planned range.</> : ''}</>}
+        tradeoff="Change too early and you chase the opening hype; change too late and the store keeps the wrong stock or counter."
+        limitation="Rerunning the model does not validate it, and a new result does not by itself prove that machines should be added. There is no live data connection: values are entered by hand."
+        actions={[
+          ['ops', `After the first ${i.hypeWeeks} weeks, record steady sales, waste, stockouts of every item, service times and lost orders.`],
+          ['entry', 'Revise the demand estimate from post-hype sales and enter it, with the latest wage and machine quote, as the updated scenario.'],
+          ['supply', 'Compare milk waste and shortages with the worked example and other stockouts with the opening list; update inputs only for a known reason.'],
+          ['format', 'Change the counter only if the full updated comparison changes, not because one threshold was crossed.'],
+        ]}
+        calc={[
+          'Post-hype sales: revise the demand estimate. Feeds the model (steady cups per day).',
+          'Waste and stockouts: reassess the ordering assumptions. Diagnostic: milk against the expected waste and shortage; other items against the opening list (not modelled).',
+          'Service times and lost orders: check whether the service model matches reality. Diagnostic only: the model contains no measured service times.',
+          'Updated wages and machine quotes: rerun the counter comparison. Feeds the model directly.',
         ]}
       />
 
@@ -134,8 +160,41 @@ export const Review: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ store
         </Card>
       )}
 
+      {orig && (
+        <Card kicker="Review" title="Updated scenario versus the original plan">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <caption className="sr-only">Updated scenario compared with the original plan</caption>
+              <thead><tr className="text-left text-[11px] uppercase tracking-wide text-[#6B7C99] border-b border-[#ECE5D3]">
+                <th scope="col" className="py-1.5 pr-3">Output</th><th scope="col" className="pr-3">Original plan · {orig.sc.name}</th><th scope="col">Updated · {sc.name}</th>
+              </tr></thead>
+              <tbody>
+                {([
+                  ['Steady demand', `${int(orig.pr.steadyCupsPerDay)} cups/day`, `${int(pr.steadyCupsPerDay)} cups/day`],
+                  ['Demand range (80%)', `±${pct(orig.pr.u, 1)} · ${int(orig.pr.steady.low / 7)}–${int(orig.pr.steady.high / 7)}/day`, `±${pct(pr.u, 1)} · ${int(pr.steady.low / 7)}–${int(pr.steady.high / 7)}/day`],
+                  ['First fresh-milk delivery', `${int(orig.prov.recommended.litres)} L`, `${int(prov.recommended.litres)} L`],
+                  ['Wage · machine quote', `${sgd(orig.sc.inputs.wage)}/h · ${sgd0(orig.sc.inputs.machineMonth)}`, `${sgd(i.wage)}/h · ${sgd0(i.machineMonth)}`],
+                  ['Counter verdict', orig.ctr ? verdictLabel(orig.ctr) : 'open the original scenario once to compute it', c ? verdictLabel(c) : 'computing…'],
+                ] as [string, string, string][]).map(([k, a, b]) => (
+                  <tr key={k} className="border-b border-[#F3EEE2]"><th scope="row" className="py-1.5 pr-3 text-left font-semibold text-[#0A2146]">{k}</th>
+                    <td className="pr-3 tabular-nums">{a}</td><td className={`tabular-nums ${a !== b ? 'font-semibold text-[#0A2146]' : ''}`}>{b}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-[#5B6E8C] mt-2">
+            {orig.ctr && c ? (orig.ctr.verdict.winner === c.verdict.winner && orig.ctr.verdict.tie === c.verdict.tie
+              ? 'The full comparison gives the same counter as the original plan: no change to the counter is indicated.'
+              : 'The full comparison now favours a different counter (or a tie). Treat it as a candidate to pilot, not proof: rerunning the model does not validate it.')
+              : 'Both scenarios use the same model; only the entered inputs differ.'}
+          </p>
+        </Card>
+      )}
+
       {/* ---------------- benefit ---------------- */}
-      <Card kicker="Benefit" title="Illustrative avoided cost" right={<StatusBadge status={bs} />}>
+      <Card kicker="Benefit" title="Illustrative avoided cost: what choosing per store is worth (quantified part only)" right={<StatusBadge status={bs} />}>
+        <p className="text-sm text-[#2D496E] -mt-2 mb-3">Comparison: a {SETUP_LABEL[i.standardSetup].toLowerCase()} counter at every opening versus choosing each store&rsquo;s counter for its modelled conditions.
+          The quantified inventory benefit covers the fresh-milk example only; benefits for tea, other ingredients and packaging have not been estimated.</p>
         <div className="grid gap-3 sm:grid-cols-2 mb-4">
           <label className="text-xs font-semibold text-[#0A2146]">Standard counter (comparator)
             <select value={i.standardSetup} onChange={e => setInput('standardSetup', e.target.value as SetupKey)} className="mt-1 w-full rounded-lg border border-[#D9D1BC] bg-white px-2 py-1.5 text-sm font-normal">
@@ -195,15 +254,76 @@ export const Review: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ store
             <p><b>One-time:</b> the opening milk order only. It is not added to the recurring figures because it happens once per store.</p>
             <p>A modelled avoided cost against a named standard, not a demonstrated saving against Chagee's current practice.</p>
           </Explain>
-          <Explain title="Why there is no operating break-even or payback figure">
-            <p><b>Operating break-even</b> (when weekly sales margin covers weekly running costs, and later when cumulative operating profit turns positive) needs a
-              target-market rent, local wages for the whole store, a menu price and a gross margin. None of these are in assumptions.json, so the prototype does not invent them.</p>
-            <p><b>Investment payback</b> would further need startup investment: fit-out, equipment, deposits and franchise fees. Operating break-even excludes all of
-              these, so it is never a payback period.</p>
-            <p>The earlier prototype reported a break-even week from synthetic revenue and 92% of a benchmark's costs; it was removed rather than relabelled.
-              What this page reports instead is a cost difference between counters, which needs no revenue figure.</p>
+          <Explain title="Store break-even versus the A4 business case">
+            <p><b>Store operating break-even</b> (weekly sales margin covering weekly running costs, then cumulative operating profit turning positive) is not computed.
+              It would need a target-market rent, wages for the whole store, a menu price and a gross margin, none of which are in assumptions.json.
+              A store <b>investment payback</b> would further need fit-out, equipment, deposits and franchise fees.</p>
+            <p>The <b>A4 business case</b> below is different: it sets the modelled avoided cost of the four gates against the approved, illustrative cost of building and running them.
+              It is a payback for the initiative, not for a store, and it contains no sales revenue.</p>
           </Explain>
         </div>
+      </Card>
+
+      <Card kicker="Appendix A4 · revenue and cost analysis" title="Business case for the four gates (illustrative)" right={<StatusBadge status={bs} />}>
+        {bc ? (
+          <Stale status={bs}>
+            <p className="text-sm text-[#2D496E] -mt-2 mb-3">
+              Over {bc.years.length} years the modelled savings {bc.payback
+                ? <>cover the cost of building and running the gates in <b>year {bc.payback}</b>, leaving about <b>{sgdThousands(bc.cum)}</b> ahead.</>
+                : <>do not cover the cost of building and running the gates: about <b>{sgdThousands(-bc.cum)}</b> short after year {bc.years.length}.</>}
+              {' '}The benefit is the modelled avoided cost above (counter plus fresh-milk stock), not sales revenue and not a payback for a store.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs tabular-nums min-w-[640px]">
+                <caption className="sr-only">Five-year revenue and cost table, SGD</caption>
+                <thead><tr className="text-right text-[10.5px] uppercase tracking-wide text-[#6B7C99] border-b border-[#ECE5D3]">
+                  <th scope="col" className="py-1.5 pr-3 text-left">SGD</th>{bc.years.map(y => <th key={y.year} scope="col" className="pr-3">Year {y.year}</th>)}
+                </tr></thead>
+                <tbody>
+                  {([
+                    ['Store-years using the gates', (y: BusinessYear) => int(y.storeYears), false],
+                    ['Counter saving (recurring)', (y: BusinessYear) => sgdThousands(y.counter), false],
+                    ['Fresh-milk opening stock (once per opening)', (y: BusinessYear) => sgdThousands(y.stock), false],
+                    ['Total benefit', (y: BusinessYear) => sgdThousands(y.benefit), true],
+                    ['Build the four gates', (y: BusinessYear) => (y.build ? sgdThousands(y.build) : '–'), false],
+                    ['Data integration and set-up', (y: BusinessYear) => (y.integ ? sgdThousands(y.integ) : '–'), false],
+                    ['Maintenance team', (y: BusinessYear) => sgdThousands(y.maint), false],
+                    ['Platform and licences', (y: BusinessYear) => sgdThousands(y.platform), false],
+                    ['Gate 4 reviews', (y: BusinessYear) => sgdThousands(y.review), false],
+                    ['Total cost', (y: BusinessYear) => sgdThousands(y.cost), true],
+                    ['Net benefit', (y: BusinessYear) => sgdThousands(y.net), true],
+                    ['Cumulative net', (y: BusinessYear) => sgdThousands(y.cum), true],
+                  ] as [string, (y: BusinessYear) => string, boolean][]).map(([k, f, strong]) => (
+                    <tr key={k} className={`border-b border-[#F3EEE2] ${strong ? 'font-semibold text-[#0A2146]' : ''}`}>
+                      <th scope="row" className="py-1 pr-3 text-left font-[inherit]">{k}</th>{bc.years.map(y => <td key={y.year} className="pr-3 text-right">{f(y)}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 mt-4">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#0A2146] mb-1">Stress cases</h4>
+                <table className="w-full text-xs tabular-nums">
+                  <caption className="sr-only">Business case sensitivity</caption>
+                  <thead><tr className="text-left text-[10.5px] uppercase text-[#6B7C99] border-b border-[#ECE5D3]"><th scope="col" className="py-1">Case</th><th scope="col" className="text-right pr-3">Cumulative net, year {bc.years.length}</th><th scope="col">Payback</th></tr></thead>
+                  <tbody>{sens.map(r => r && (
+                    <tr key={r.label} className="border-b border-[#F3EEE2]"><th scope="row" className="py-1 text-left font-normal">{r.label}</th>
+                      <td className={`text-right pr-3 ${r.cum < 0 ? 'text-[#9B2C1F]' : ''}`}>{sgdThousands(r.cum)}</td><td>{r.payback ? `year ${r.payback}` : `not within ${bc.years.length} years`}</td></tr>
+                  ))}</tbody>
+                </table>
+              </div>
+              <Explain title="How it is calculated and what it rests on">
+                <p>Counter saving per store-year = {sgd0(bc.perStore)}: the yearly cost of the {SETUP_LABEL[i.standardSetup].toLowerCase()} standard above the cheapest counter, averaged over openings spread across the volume range above. It recurs.</p>
+                <p>Fresh-milk stock = {sgd0(bc.perOpen)} per opening, once: the best first order with no signal minus with the signal. It holds only if sign-ups narrow the range as assumed. No other inventory is estimated.</p>
+                <p>Store-years: earlier openings trade all year, new ones half a year. Openings held flat at {int(i.openingsPerYear)} a year.</p>
+                <p>Costs (assumptions.json business_case, approved, illustrative): build {A.business_case.build_people.value} people × {A.business_case.build_months.value} months × {bc.mday} days × {sgd0(bc.rate)}/day = {sgdThousands(bc.build)}; integration {sgdThousands(bc.integ)} once;
+                  maintenance {A.business_case.maintenance_people.value} people = {sgdThousands(bc.maint)} a year; platform {sgd0(A.business_case.platform_per_store_month.value)} per store-month; one analyst day per opening for Review.</p>
+                <p>Thin: payback, if any, arrives late, and the stress cases show it rests on the per-store counter saving, which a pilot with real Chagee data should test first.</p>
+              </Explain>
+            </div>
+          </Stale>
+        ) : <p className="text-sm text-[#5B6E8C]">Waiting for the volume curve…</p>}
       </Card>
     </div>
   );

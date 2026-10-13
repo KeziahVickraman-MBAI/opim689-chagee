@@ -35,7 +35,7 @@ export function useScenarioStore() {
     const s = load();
     if (s) return s;
     const first = newScenario();
-    return { scenarios: [first], activeId: first.id, section: 'predict' };
+    return { scenarios: [first], activeId: first.id, section: 'context' };
   });
   const [saveError, setSaveError] = useState(false);
 

@@ -87,3 +87,7 @@ export interface ComparisonSide { steadyCupsPerDay: number; u: number; low: numb
 export function staffingPlan(ctx: Ctx, s: EngineInputs): Record<SetupKey, StaffingRow>;
 export function membershipComparison(ctx: Ctx, s: EngineInputs): { with: ComparisonSide | null; without: ComparisonSide; active: boolean };
 export function observedBandPrefill(ctx: { A: any }, observedU: number): number;
+export interface BusinessYear { year: number; opens: number; storeYears: number; counter: number; stock: number; build: number; integ: number; maint: number; platform: number; review: number; benefit: number; oneTime: number; recurring: number; cost: number; net: number; cum: number }
+export interface BusinessCaseResult { years: BusinessYear[]; payback: number | null; cum: number; perStore: number; perOpen: number; build: number; integ: number; maint: number; rate: number; mday: number; totalBenefit: number; totalCost: number }
+export function businessCase(ctx: Ctx, s: EngineInputs, bn: BenefitResult, o?: { openings?: number; oneTimeMult?: number; savingMult?: number }): BusinessCaseResult | null;
+export function businessSensitivity(ctx: Ctx, s: EngineInputs, bn: BenefitResult): ({ label: string; cum: number; payback: number | null } | null)[];

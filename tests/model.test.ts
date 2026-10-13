@@ -177,3 +177,19 @@ test('recurring avoided cost = cost-per-cup gap x cups/day x open days, flagged 
   assert.ok(close(bn.recurring.perStoreYear, gap * pr.steadyCupsPerDay * A.store.open_days_per_year.value));
   assert.equal(bn.recurring.withinTolerance, Math.abs(gap) < ctr.tol);
 });
+
+/* ---------------- Appendix A4 business case ---------------- */
+test('A4 business case: payback is the first year cumulative net turns non-negative; stress cases move it as expected', () => {
+  const pr = E.predict(ctx, BASE), prov = E.provision(ctx, BASE, pr);
+  const bn = E.benefit(ctx, BASE, { pr, prov, ctr: null, vc: { source: 'precomputed', rows: D.volumeCurve } });
+  const bc = E.businessCase(ctx, BASE, bn)!;
+  const first = bc.years.find(y => y.cum >= 0);
+  assert.equal(bc.payback, first ? first.year : null);
+  for (let k = 1; k < bc.years.length; k++) assert.ok(close(bc.years[k].cum, bc.years[k - 1].cum + bc.years[k].net));
+  const dbl = E.businessCase(ctx, BASE, bn, { oneTimeMult: 2 })!;
+  assert.ok(close(bc.cum - dbl.cum, bc.build + bc.integ));                 // one-time costs hit year 1 only
+  const half = E.businessCase(ctx, BASE, bn, { savingMult: 0.5 })!;
+  const counter = bc.years.reduce((a, y) => a + y.counter, 0);
+  assert.ok(close(bc.cum - half.cum, counter / 2));
+  assert.equal(E.businessCase(ctx, BASE, { ...bn, pipeline: null }), null); // no curve, no business case
+});

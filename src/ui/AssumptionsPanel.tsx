@@ -2,11 +2,12 @@
  * (assumptions.json, not editable here) and calculated outputs (current scenario). */
 import React from 'react';
 import { A, D } from '../model/ctx';
-import { modelFacts, SETUP_LABEL } from '../model/engine.js';
+import { businessCase, modelFacts, SETUP_LABEL } from '../model/engine.js';
+import { ctx } from '../model/ctx';
 import { FACTOR_CONFIGS, similarityIndex } from '../data/markets';
 import type { ScenarioStore } from '../state/scenarios';
 import type { Analysis } from '../state/analysis';
-import { int, num, pct, sgd, sgd0, sgdK } from './kit';
+import { int, num, pct, sgd, sgd0, sgdK, sgdThousands } from './kit';
 
 const FACTS = modelFacts({ A, D });
 const v = (sec: string, key: string) => (A as any)[sec][key].value;
@@ -54,6 +55,8 @@ export const AssumptionsPanel: React.FC<{ store: ScenarioStore; an: Analysis }> 
           ['Monte Carlo draws · seed', `${v('simulation', 'monte_carlo_draws')} · ${v('simulation', 'base_seed')}`],
           ['Tie tolerance', `${sgd(FACTS.tieTolerance)} a cup`],
           ['FX for USD-approved costs', `${FACTS.fx} SGD/USD`],
+          ['A4 build · integration', `${v('business_case', 'build_people')} people × ${v('business_case', 'build_months')} mo · ${sgdK(v('business_case', 'integration_one_time'))}`],
+          ['A4 running costs', `${v('business_case', 'maintenance_people')} FTE · ${sgd0(v('business_case', 'platform_per_store_month'))}/store-month · ${v('business_case', 'review_days_per_opening')} day/opening`],
         ]} />
         <Col title="Calculated outputs" note="Recomputed from the two columns on the left for this scenario." rows={[
           ['Similarity (heuristic index)', `${num(similarityIndex(sc.factors), 1)} / 100`],
@@ -63,6 +66,7 @@ export const AssumptionsPanel: React.FC<{ store: ScenarioStore; an: Analysis }> 
           ['Two-week milk requirement', `${int(p.twoWeek.baseLitres)} L in ${p.twoWeek.deliveries} deliveries`],
           ['Counter verdict', c ? (c.verdict.tie ? 'Too close to call' : `${SETUP_LABEL[c.verdict.winner]} by ${sgd(c.verdict.margin, 3)}/cup`) : 'computing'],
           ['Avoided cost, pipeline', bn.pipeline ? `${sgdK(bn.pipeline.total)}/yr` : 'computing'],
+          ['A4 business case', (() => { const bc = businessCase(ctx, i, bn); return bc ? (bc.payback ? `payback year ${bc.payback}, ${sgdThousands(bc.cum)}` : `${sgdThousands(bc.cum)} after ${bc.years.length} yrs`) : 'computing'; })()],
         ]} />
       </div>
     </details>

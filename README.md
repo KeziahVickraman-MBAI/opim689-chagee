@@ -3,14 +3,16 @@
 An illustrative, client-side prototype for deciding how a new overseas tea store opens. It uses synthetic data and
 illustrative assumptions in SGD, and it is not affiliated with Chagee.
 
-Four gates share one scenario:
+It follows the latest deck (`opim639-chagee-deck`, commit recorded in `src/model/vendor/source.json`). An **Overview**
+(the deck's Context slide) frames one new store with no local sales history and separates three layers: the proposed AI
+(not built here), what this prototype calculates, and who decides. Four gates then share one scenario:
 
 | Gate | When | Decision |
 |---|---|---|
 | **1 · Predict** | Before committing the site | Steady demand and its band; market matching; member signal |
-| **2 · Provision** | Before the first stock order | Opening fresh-milk order; two-week procurement requirement |
+| **2 · Provision** | Before the first stock order | Whole-store opening inventory plan (qualitative); fresh-milk worked example (steady and opening-surge orders) |
 | **3 · Counter** | Before fit-out | All-human, mixed or all-machine counter |
-| **4 · Review** | After opening | Forecast vs actual; rerun on observed inputs; illustrative avoided cost |
+| **4 · Review** | After opening | Forecast vs actual; updated scenario vs original plan; illustrative avoided cost; Appendix A4 business case |
 
 The secondary sections are a printable **Decision summary** and **Validation questions**, the discussion guide for the
 industry conversation with Lee Yen.
@@ -38,6 +40,8 @@ The repository also contains `bun.lock` from its original setup; npm does not re
 - `src/model/engine.js` is the only calculation layer. It maps a scenario onto `sim.js` and reads results back.
   The app, the Web Worker (`src/model/worker.ts`, which runs the counter model off the main thread) and the
   tests all import it.
+- `src/content/deck.ts` carries the deck's wording (team roles, the "where AI enters" steps, the inventory plan matrix,
+  claims not made) so the app and slides say the same thing.
 - `src/data/markets.ts` holds synthetic market profiles and the market-pair similarity functions.
   `src/state/scenarioOps.ts` holds the pure scenario operations (change market, reset), and `src/state/scenarios.ts` wraps them with localStorage persistence.
 - There is no backend, no authentication, no AI service and no live data. Scenarios are saved only in this browser.
@@ -63,6 +67,8 @@ tie tolerance of S$0.01 a cup, and FX of 1.2725 SGD/USD for costs first approved
 - **Two-week procurement requirement.** Forecast milk for days 1–14 (hype included), bought across staggered deliveries rather than held at opening. Only the first delivery is optimised.
 - **Counter.** Cost per cup (labour + machines + lost sales) for each setup, using all inputs together. Inside S$0.01 a cup the result is "Too close to call".
   One-variable thresholds are sensitivities with other inputs held. "No crossover in tested range" is reported rather than invented.
+- **Inventory plan.** Forecast cups → product mix → recipes → deliveries, and a qualitative plan for tea, milk and alternatives, other ingredients and packaging. Only fresh milk is quantified.
+- **A4 business case.** Five years of modelled benefit (counter saving per store-year × store-years, plus the fresh-milk signal saving per opening) against the approved, illustrative cost of building and running the gates (`business_case` in `assumptions.json`), with the deck's three stress cases. At the defaults it reproduces the deck: payback in year 5, about S$289k ahead.
 - **Avoided cost.** Recurring: the gap in cost per cup against a named standard counter (default mixed) × steady cups/day × 360 open days. One-time: the opening-stock benefit, shown separately.
 
 ## Limitations
@@ -72,5 +78,7 @@ tie tolerance of S$0.01 a cup, and FX of 1.2725 SGD/USD for costs first approved
 - Tourist and non-app demand is not modelled unless an add-on is entered.
 - The staffing model (a pooled bucket brigade) misses its own Week 5 validation (a 4.7–6.8% gap against a ±3% tolerance). Machine breakdowns are not modelled. The default verdict is close (about S$0.02 a cup).
 - Within the horizon, milk replenishment is not modelled; deliveries after the first are not optimised.
-- No operating break-even and no investment payback are computed. Either would need target-market rent, wages, prices and margins (not in `assumptions.json`); payback would also need fit-out, equipment and deposits. The earlier prototype's break-even week was removed rather than relabelled.
+- Only fresh milk is quantified; tea, other ingredients and packaging have no quantities or savings, and inventory and counter are not optimised together.
+- The A4 business case is a payback for the initiative on illustrative costs, not a payback for Chagee or for a store, and contains no sales revenue.
+- No store operating break-even and no store investment payback are computed. Either would need target-market rent, wages, prices and margins (not in `assumptions.json`); payback would also need fit-out, equipment and deposits. The earlier prototype's break-even week was removed rather than relabelled.
 - Live thresholds away from the defaults use 20 simulated stores and are estimates.

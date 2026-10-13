@@ -3,6 +3,7 @@ import { useScenarioStore } from './state/scenarios';
 import { useAnalysis } from './state/analysis';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { Overview } from './sections/Overview';
 import { Predict } from './sections/Predict';
 import { Provision } from './sections/Provision';
 import { Counter } from './sections/Counter';
@@ -24,6 +25,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-[#F7F3EA] text-[#0A2146] print:bg-white">
       <Header store={store} an={an} onPrint={() => setPrintReq(x => x + 1)} />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 print:hidden">
+        {s === 'context' && <Overview store={store} an={an} />}
         {s === 'predict' && <Predict store={store} an={an} />}
         {s === 'provision' && <Provision store={store} an={an} />}
         {s === 'counter' && <Counter store={store} an={an} />}

@@ -1,6 +1,6 @@
 import type { EngineInputs } from './model/engine.js';
 
-export type SectionId = 'predict' | 'provision' | 'counter' | 'review' | 'questions' | 'summary';
+export type SectionId = 'context' | 'predict' | 'provision' | 'counter' | 'review' | 'questions' | 'summary';
 export type Setup = 'all_human' | 'mixed' | 'all_machine';
 
 /* Pair similarity factors, each 0-100 where 100 = target and benchmark alike on that dimension. */
@@ -66,4 +66,5 @@ export interface Scenario {
   inputs: Inputs;
   actuals: ObservedWeek[];   // Review: starts as the synthetic example, editable
   actualsSynthetic: boolean; // true until a user edits a cell
+  basedOn?: string;          // Review: id of the original plan an observed scenario was created from
 }

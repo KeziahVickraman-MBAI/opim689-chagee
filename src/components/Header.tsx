@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { TrendingUp, Milk, Users, ClipboardCheck, MessageSquare, Printer, Copy, RotateCcw, Plus, Trash2, Pencil, FileText } from 'lucide-react';
+import { Compass, TrendingUp, Milk, Users, ClipboardCheck, MessageSquare, Printer, Copy, RotateCcw, Plus, Trash2, Pencil, FileText } from 'lucide-react';
 import type { SectionId } from '../types';
 import { changedInputs, newScenario, type ScenarioStore } from '../state/scenarios';
 import type { Analysis } from '../state/analysis';
@@ -32,7 +32,7 @@ export const Header: React.FC<{ store: ScenarioStore; an: Analysis; onPrint: () 
               <span className="font-display text-lg tracking-wider font-semibold">CHAGEE EXPANSION LAB</span>
               <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase bg-[#D4AF37]/25 text-[#F3DE96] border border-[#D4AF37]/50 rounded">Illustrative prototype · synthetic data</span>
             </div>
-            <p className="text-xs text-[#A8C4ED]">Store-opening decisions: predict demand → provision opening stock → choose the counter → review after opening</p>
+            <p className="text-xs text-[#A8C4ED]">One new store, no local sales history: estimate demand, plan the inventory, choose a counter, then update</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -75,6 +75,15 @@ export const Header: React.FC<{ store: ScenarioStore; an: Analysis; onPrint: () 
       {/* navigation: four gates, then secondary */}
       <nav className="bg-[#071D45] border-t border-[#133775]" aria-label="Sections">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-1 overflow-x-auto">
+          <button onClick={() => setSection('context')} aria-current={section === 'context' ? 'page' : undefined}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-left whitespace-nowrap transition ${section === 'context' ? 'bg-[#0047BA] border border-[#7BA4F5]/60' : 'hover:bg-[#0D2E68]'}`}>
+            <Compass className={`w-4 h-4 ${section === 'context' ? 'text-[#F3DE96]' : 'text-[#7D9ECB]'}`} />
+            <span>
+              <span className="block text-sm font-semibold leading-tight">Overview</span>
+              <span className="block text-[10px] text-[#A8C4ED] leading-tight">Context and AI scope</span>
+            </span>
+          </button>
+          <span className="mx-1 h-6 w-px bg-[#24488C]" aria-hidden />
           {GATES.map((g, k) => (
             <React.Fragment key={g.id}>
               <button onClick={() => setSection(g.id)} aria-current={section === g.id ? 'page' : undefined}

@@ -11,6 +11,9 @@ const StoreReplica = lazy(() => import('../ui/StoreReplica'));
 const META = inputMeta(A);
 const FACTS = modelFacts({ A, D });
 const [V_LO, V_HI] = META.baseCupsPerDay.range;
+const STATION_LABEL: Record<string, string> = { ticket: 'order & ticket', cup_ice: 'cup & ice', tea_milk: 'tea & milk',
+  topping_finish: 'toppings', shake_seal: 'shake & seal', handover: 'hand-over' };
+const MIXED_STATIONS = (A.stations.mixed_machine_stations.value as string[]).map(x => STATION_LABEL[x] || x).join(', ');
 
 export const fmtLever = (lever: string, x: number) =>
   lever === 'cupsPerDay' ? `${int(x)} cups/day` : lever === 'wage' ? `${sgd(x)}/h` : lever === 'machineMonth' ? `${sgd0(x)}/month`
@@ -39,16 +42,29 @@ export const Counter: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ stor
   return (
     <div className="space-y-6">
       <DecisionFrame
-        gate="Gate 3 · Counter" when="Before fit-out" who="Store format / equipment, with franchisees (capex and labour)"
-        decision="Which counter does this store open with: all-human, mixed, or all-machine?"
-        inputs={<>{int(pr.steadyCupsPerDay)} steady cups/day, band ±{pct(pr.u, 1)}, {i.surge} surge, wage {sgd(i.wage)}/h, machine {sgd0(i.machineMonth)}/unit/month, staffing assumptions.</>}
-        status={cs}
-        suggests={vt ? <><b className="text-white text-base">{vt.head}</b><br />{vt.sub}. Verdict uses all current inputs together.</> : 'Computing the cost model…'}
-        checks={[
-          `Staffing shortcut misses its Week 5 check (gap ${num(Math.min(...FACTS.week5.gaps), 1)}–${num(Math.max(...FACTS.week5.gaps), 1)}% vs ±${FACTS.week5.tolerancePct}%).`,
-          'Machine breakdowns are not modelled; this flatters automation.',
-          'Price the machine and set the local wage (SGD) before relying on it.',
-          'Thresholds below move one input at a time; they are not the verdict.',
+        gate="Gate 3 · Counter" when="Before fit-out" roles={['format', 'ops']} status={cs}
+        decision="Which counter should this store install: all-human, mixed, or full automation?"
+        evidence={c ? [
+          ['Cost per cup', `all-human ${sgd(c.setups.all_human.costPerCup)} · mixed ${sgd(c.setups.mixed.costPerCup)} · all-robot ${sgd(c.setups.all_machine.costPerCup)}`],
+          ['All-robot machines busy', c.setups.all_machine.machineBusy == null ? '—' : `${pct(c.setups.all_machine.machineBusy)} of open hours`],
+          ['Inputs', `${int(pr.steadyCupsPerDay)} cups/day · ±${pct(pr.u, 1)} · ${i.surge} surge`],
+        ] : [['Cost per cup', 'computing…']]}
+        action={vt && c ? (c.verdict.tie
+          ? <><b className="text-white">Too close to call</b>: {vt.sub}. Choose using all current inputs together.</>
+          : <><b className="text-white">{vt.head}</b> is cheaper by {sgd(c.verdict.margin, 3)} a cup at these inputs{c.verdict.margin < 0.05 ? ': close, but above the ' + sgd(c.tol) + ' tie line' : ''}. Choose using all current inputs together.</>)
+          : 'Computing the cost model…'}
+        tradeoff="All-human: cheapest at low volume, but depends on trained staff. Machines: faster in the peak, but idle and costly when volume is low."
+        limitation={`Small gap on a simplified staffing model that misses its Week 5 check (${FACTS.week5.gaps.map((g: number) => num(g, 1) + '%').join(' and ')} against ±${FACTS.week5.tolerancePct}%). No measured service times: a candidate to test in a pilot, not an instruction to install.`}
+        actions={[
+          ['format', 'Enter the store\u2019s expected steady volume, local wage and machine quote (inputs below; SGD).'],
+          ['format', `Install the setup the full comparison favours. If the margin is under ${sgd(FACTS.tieTolerance)} a cup, treat it as a tie and decide on service, staffing risk or brand.`],
+          ['format', `Mixed means machines at ${MIXED_STATIONS} with ${c ? c.setups.mixed.peakStaff : '…'} person at the peak; all-human means ${c ? c.setups.all_human.peakStaff : '…'} staff at the peak (model staffing).`],
+          ['ops', 'Put the thresholds closest to your inputs on a watch list for Review.'],
+        ]}
+        calc={[
+          `Cost per cup = (labour + machines + lost sales) ÷ cups served, summed over ${FACTS.draws} simulated stores at this scenario\u2019s range and surge.`,
+          'One-variable thresholds move one input at a time with the rest held: they show which assumptions deserve closer attention, not a rule to switch setups.',
+          'Faster service does not mean a lower cost per cup: at low volume, machine capacity sits unused.',
         ]}
       />
 
@@ -138,7 +154,7 @@ export const Counter: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ stor
         </Stale>
       )}
 
-      <Card kicker="Sensitivity, not the verdict" title="One-variable thresholds"
+      <Card kicker="Sensitivity, not the verdict" title="One-variable thresholds: which assumptions deserve a closer look"
         right={<StatusBadge status={ts} />}>
         <p className="text-sm text-[#2D496E] -mt-2 mb-3">
           {c ? <>Where {SETUP_LABEL[c.verdict.runnerUp]} would overtake {SETUP_LABEL[c.verdict.winner]} if <b>only that input</b> moved, every other input held at this scenario.

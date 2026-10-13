@@ -31,6 +31,11 @@ function getWorker(): Worker {
 const cache = new Map<string, Parts>();
 let seq = 0;
 
+/* Counter result for any inputs already computed this session (e.g. the original plan), without starting a run. */
+export function cachedCounter(i: Inputs): CounterResult | null {
+  return cache.get(counterKey(i))?.counter ?? null;
+}
+
 export function useAnalysis(inputs: Inputs) {
   const pr = useMemo(() => predict(ctx, inputs), [inputs]);
   const prov = useMemo(() => provision(ctx, inputs, pr), [inputs, pr]);

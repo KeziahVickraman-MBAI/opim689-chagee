@@ -362,6 +362,43 @@ export function benefit(ctx, s, { pr, prov, ctr, vc }) {
   return out;
 }
 
+/* ---------------- Review: Appendix A4 business case ----------------
+ * Mirrors deck/build_deck.py business_case(): the yearly modelled benefit of the four gates against the cost of
+ * building and running them. Benefit = counter saving per store-year (the pipeline's average per opening) x
+ * store-years, plus the fresh-milk signal saving once per opening. No sales revenue. Business-case inputs are the
+ * deck's approved, illustrative assumptions.json business_case values. */
+export function businessCase(ctx, s, bn, { openings, oneTimeMult = 1, savingMult = 1 } = {}) {
+  const { A } = ctx, B = k => v(A, "business_case", k);
+  if (!bn.pipeline || !bn.oneTime) return null;
+  const opens = openings ?? s.openingsPerYear;
+  const perStore = bn.pipeline.bars.reduce((a, b) => a + b.share * b.perOpening, 0) * savingMult;
+  const perOpen = bn.oneTime.perOpeningSignal;
+  const rate = B("specialist_day_rate"), mday = B("working_days_per_month");
+  const build = B("build_people") * B("build_months") * mday * rate * oneTimeMult;
+  const integ = B("integration_one_time") * oneTimeMult;
+  const maint = B("maintenance_people") * 12 * mday * rate;
+  const years = []; let cum = 0;
+  for (let y = 0; y < B("horizon_years"); y++) {
+    const storeYears = opens * y + opens * B("opening_year_share");      // earlier cohorts all year, new ones part
+    const r = { year: y + 1, opens, storeYears, counter: storeYears * perStore, stock: opens * perOpen,
+                build: y === 0 ? build : 0, integ: y === 0 ? integ : 0, maint,
+                platform: storeYears * B("platform_per_store_month") * 12, review: opens * B("review_days_per_opening") * rate };
+    r.benefit = r.counter + r.stock; r.oneTime = r.build + r.integ; r.recurring = r.maint + r.platform + r.review;
+    r.cost = r.oneTime + r.recurring; r.net = r.benefit - r.cost; cum += r.net; r.cum = cum;
+    years.push(r);
+  }
+  const payback = (years.find(r => r.cum >= 0) || {}).year ?? null;
+  return { years, payback, cum, perStore, perOpen, build, integ, maint, rate, mday,
+           totalBenefit: years.reduce((a, r) => a + r.benefit, 0), totalCost: years.reduce((a, r) => a + r.cost, 0) };
+}
+
+/* The deck's A4 sensitivity cases. */
+export function businessSensitivity(ctx, s, bn) {
+  const cases = [["Base case (approved assumptions)", {}], ["One-time costs double", { oneTimeMult: 2 }],
+                 ["Counter saving halves", { savingMult: 0.5 }], ["Openings fall to 100 a year", { openings: 100 }]];
+  return cases.map(([label, o]) => { const r = businessCase(ctx, s, bn, o); return r && { label, cum: r.cum, payback: r.payback }; });
+}
+
 /* ---------------- Review: synthetic post-opening example ----------------
  * A fixed, made-up eight-week record for one store. Not model output, not Chagee data. It exists to show
  * what the Review gate compares; users replace it with their own observations. */

@@ -25,18 +25,28 @@ export const Predict: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ stor
   return (
     <div className="space-y-6">
       <DecisionFrame
-        gate="Gate 1 · Predict" when="Before committing the site" who="Market-entry leads; Membership / CRM runs the signal"
-        decision="Is demand at this site strong enough to commit, and what demand band do stock and counter planning inherit?"
-        inputs={<>Benchmark market and similarity factors; pre-launch member counts; base steady volume; hype and tourist assumptions.</>}
-        suggests={<>
-          <b className="text-white">{int(pr.steadyCupsPerDay)} cups/day</b> steady (80% band {int(pr.steady.low / 7)}–{int(pr.steady.high / 7)}), ±{pct(pr.u, 1)}.
-          {' '}Opening weeks at about {int(pr.opening.base / 7)} cups/day for {pr.hypeWeeks} weeks.
-        </>}
-        checks={[
-          'Similarity is a heuristic index, not a probability or accuracy measure.',
-          'Sign-ups are interest, not purchases; conversion needs a proxy.',
-          'Tourist and non-app demand sit outside the member signal.',
-          'Back-test the band on past openings before relying on it.',
+        gate="Gate 1 · Predict" when="Before committing the site" roles={['entry', 'crm']}
+        decision="What demand should the whole store's inventory and counter planning assume?"
+        evidence={[
+          ['Base', `${int(pr.handed.base)} cups/week`],
+          [`${pct(pr.coverage)} range`, `${int(pr.handed.low)}–${int(pr.handed.high)}`],
+          ['Half-width', `±${pct(pr.u, 1)}`],
+          ['Similarity (heuristic)', `${num(sim, 1)} / 100`],
+        ]}
+        action={<>Plan on about <b className="text-white">{int(pr.handed.base)} cups a week</b> ({int(pr.handed.base / 7)} a day), within an illustrative {pct(pr.coverage)} range
+          of {int(pr.handed.low)} to {int(pr.handed.high)}; treat it as an assumption to test.
+          {' '}Opening weeks run at about {int(pr.opening.base / 7)} cups a day for {pr.hypeWeeks} weeks.</>}
+        tradeoff="Plan too low: stockouts, queues and lost sales. Plan too high: stock that expires or ties up cash, and machines or staff that sit idle."
+        limitation="The range is assumed, not calibrated, and demand can fall outside it. It cannot approve a site or show that a store is viable. Similarity is a heuristic index, not a probability or accuracy measure."
+        actions={[
+          ['crm', 'Before the site is committed, open a pre-launch waitlist and tag each sign-up as new or already a Chagee member in another market.'],
+          ['entry', 'Set the base from comparable stores; use sign-ups only to cross-check it. Send the range to Provision and Counter.'],
+          ['entry', 'Widen the range where tourists or walk-ups matter, and back-test it on recent openings before narrowing it.'],
+        ]}
+        calc={[
+          `Base = an assumed comparable-store volume, ${int(A.store.cups_per_store_per_year.value)} cups a year over ${A.store.open_days_per_year.value} open days (synthetic), × member uplift × tourist add-on (both 0% by default).`,
+          `Range = base ± the half-width. The half-width moves in a straight line from ±${pct(pr.uNone)} with no signal to ±${pct(pr.uStrong)} with a strong one: an assumption to test, not evidence that membership data improves accuracy.`,
+          'Proposed AI (not built here): a model trained on existing stores would set the base, with sign-ups as a cross-check. In this prototype the base is assumed.',
         ]}
       />
 

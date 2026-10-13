@@ -1,10 +1,11 @@
 /* Printable decision summary: readable without interaction. Printed from any section (print CSS hides the rest). */
-import React from 'react';
-import { A, D, MODEL_VERSION, SOURCE } from '../model/ctx';
-import { inputMeta, modelFacts, SETUP_LABEL, SETUPS } from '../model/engine.js';
+import React, { useMemo } from 'react';
+import { A, D, ctx, MODEL_VERSION, SOURCE } from '../model/ctx';
+import { inputMeta, modelFacts, SETUP_LABEL, SETUPS, businessCase, provision } from '../model/engine.js';
+import { CLAIMS_NOT_MADE } from '../content/deck';
 import { changedInputs, type ScenarioStore } from '../state/scenarios';
 import type { Analysis } from '../state/analysis';
-import { int, pct, num, sgd, sgd0, sgdK, secToMin } from '../ui/kit';
+import { int, pct, num, sgd, sgd0, sgdK, sgdThousands, secToMin } from '../ui/kit';
 import { fmtLever, leverDistance, verdictText } from './Counter';
 import { similarityIndex } from '../data/markets';
 
@@ -12,14 +13,14 @@ const META: Record<string, any> = inputMeta(A);
 const FACTS = modelFacts({ A, D });
 
 export const LIMITATIONS = [
-  'All inputs are illustrative assumptions (assumptions.json) or synthetic; none are Chagee figures.',
+  'All inputs are illustrative assumptions (assumptions.json) or synthetic; none are Chagee figures. No trained AI model: the proposed AI is not built here.',
   'Band narrowing with member signal is an assumed straight line, not an estimated relationship; back-test before use.',
   'Tourist and non-app demand is not modelled unless an add-on is entered.',
+  'Only fresh milk is quantified; tea, other ingredients and packaging are planned qualitatively. Inventory and counter are not optimised together.',
   `Staffing uses a pooled bucket-brigade formula that misses its Week 5 validation (${FACTS.week5.gaps.map((g: number) => num(g, 1) + '%').join(', ')} vs ±${FACTS.week5.tolerancePct}%).`,
-  'Machine breakdowns are not modelled, which flatters automation.',
-  'Milk replenishment within the stock horizon and carry-over past expiry are not modelled.',
+  'Machine breakdowns are not modelled, which flatters automation. No measured service times.',
   'Thresholds are one-at-a-time sensitivities; live thresholds use 20 simulated stores and are estimates.',
-  'Avoided cost is modelled against a named standard counter, not a demonstrated saving; no payback is computed (no cash-flow model).',
+  'Avoided cost is modelled against a named standard counter, not a demonstrated saving. The A4 business case is a payback for the initiative on illustrative costs; no store break-even or payback is computed.',
 ];
 
 const H: React.FC<{ n: string; t: string }> = ({ n, t }) => (
@@ -34,6 +35,9 @@ export const Summary: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ stor
   const changed = changedInputs(sc);
   const vt = verdictText(c);
   const pending = an.overall !== 'current';
+  const bc = useMemo(() => businessCase(ctx, i, bn), [i, bn]);
+  const surge = useMemo(() => provision(ctx, { ...i, provisionBasis: 'opening' }, pr), [i, pr]);
+  const steadyOrder = useMemo(() => provision(ctx, { ...i, provisionBasis: 'steady' }, pr), [i, pr]);
   const nearest = th ? [...th].filter(t => t.x != null).sort((a, b) => leverDistance(a) - leverDistance(b)).slice(0, 3) : [];
 
   return (
@@ -58,10 +62,17 @@ export const Summary: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ stor
         </p>
       )}
 
-      <H n="Recommendation" t="Opening decisions at a glance" />
+      <H n="Context" t="One new store, no local sales history" />
+      <table className="w-full"><tbody>
+        <Row k="Proposed AI (not built here)" v="Forecast the whole store's demand from comparable stores, cross-checked by pre-launch app sign-ups, and validate it against actual sales." />
+        <Row k="What this prototype calculates" v="From synthetic, assumed inputs: a demand range, one inventory worked example (fresh milk) and a counter simulation. Tea, other ingredients and packaging are planned qualitatively." />
+        <Row k="Who decides" v="People: teams set the inventory plan and choose the counter from these outputs and local constraints." />
+      </tbody></table>
+
+      <H n="Recommendation" t="Four outputs for this opening" />
       <table className="w-full"><tbody>
         <Row k="Gate 1 · Predict (before committing the site)" v={<>Steady demand <b>{int(pr.steadyCupsPerDay)} cups/day</b>, 80% band {int(pr.steady.low / 7)}–{int(pr.steady.high / 7)} (±{pct(pr.u, 1)}); opening weeks about {int(pr.opening.base / 7)} cups/day for {pr.hypeWeeks} weeks.</>} />
-        <Row k="Gate 2 · Provision (before the first order)" v={<>Order <b>{int(p.recommended.litres)} L</b> fresh milk for {p.horizon} days; expected cost {sgd0(p.recommended.total)} (waste {sgd0(p.recommended.waste)}, shortage {sgd0(p.recommended.shortage)}).</>} />
+        <Row k="Gate 2 · Provision (before the first order)" v={<>Opening list item by item (qualitative). First fresh-milk delivery <b>{int(steadyOrder.recommended.litres)} L</b> on steady demand, about {int(surge.recommended.litres)} L if the opening surge is real; expected cost {sgd0(steadyOrder.recommended.total)}.</>} />
         <Row k="Gate 3 · Counter (before fit-out)" v={vt ? <><b>{vt.head}</b>{an.counter.status !== 'current' && ' †'}: {vt.sub}.</> : 'computing'} />
         <Row k="Gate 4 · Review (after opening)" v={<>Measure steady volume after the hype, then rerun the counter on observed inputs. Comparator: {SETUP_LABEL[i.standardSetup]} standard counter.</>} />
       </tbody></table>
@@ -83,7 +94,7 @@ export const Summary: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ stor
         <Row k="Expected cost: recommended vs base order" v={`${sgd0(p.recommended.total)} vs ${sgd0(p.naive.total)} (ordering ${int(p.naive.litres)} L)`} />
         <Row k="Horizon · shelf life" v={`${p.horizon} days · ${i.milkShelfLife} days; replenishment not modelled`} />
         {p.flags.length > 0 && <Row k="Flags" v={<ul className="list-disc pl-4">{p.flags.map((f: string) => <li key={f}>{f}</li>)}</ul>} />}
-        <Row k="Tea and packaging" v="Shelf-stable; ordered separately (grams and units per cup not available)." />
+        <Row k="Tea, other ingredients, packaging" v="Planned qualitatively: no quantities or savings (recipes, menu mix, lead times and minimum orders not in the sources)." />
       </tbody></table>
 
       <H n="3" t="Counter" />
@@ -111,7 +122,8 @@ export const Summary: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ stor
         <Row k="Illustrative avoided cost, recurring, this store" v={bn.recurring ? (bn.recurring.withinTolerance ? 'Within tie tolerance (≈ 0)' : `${sgd0(bn.recurring.perStoreYear)} a year (${SETUP_LABEL[bn.recurring.selected]} vs standard; ${sgd(bn.recurring.perCup, 3)}/cup × ${int(bn.recurring.cupsPerDay)} cups/day × ${bn.days} days)`) : 'computing'} />
         <Row k="Illustrative avoided cost, recurring, pipeline" v={bn.pipeline ? `${sgdK(bn.pipeline.total)} a year: ${int(bn.pipeline.openings)} openings evenly spread over ${int(bn.pipeline.lo)}–${int(bn.pipeline.hi)} cups/day, cheapest counter per volume` : 'computing'} />
         <Row k="One-time, opening stock" v={bn.oneTime ? `${sgd0(bn.oneTime.perOpeningVsNaive)} per opening vs ordering the base; signal value ${sgd0(bn.oneTime.perOpeningSignal)} per opening` : '—'} />
-        <Row k="Not reported" v="Payback / break-even week: no complete cash-flow model (capex, rent, franchise terms)." />
+        <Row k="A4 business case (initiative, illustrative)" v={bc ? `${bc.payback ? `Savings cover the cost of building and running the gates in year ${bc.payback}, ${sgdThousands(bc.cum)} ahead after ${bc.years.length} years` : `Not covered within ${bc.years.length} years: ${sgdThousands(-bc.cum)} short`}; benefit ${sgdThousands(bc.totalBenefit)} vs cost ${sgdThousands(bc.totalCost)}. No sales revenue.` : 'computing'} />
+        <Row k="Not reported" v="Store operating break-even or investment payback: needs rent, prices, margins, fit-out and deposits, which are not in the model." />
       </tbody></table>
 
       <H n="Inputs" t="All scenario inputs" />
@@ -128,6 +140,9 @@ export const Summary: React.FC<{ store: ScenarioStore; an: Analysis }> = ({ stor
 
       <H n="Limits" t="Remaining model limitations" />
       <ul className="list-disc pl-5 space-y-0.5 text-xs">{LIMITATIONS.map(l => <li key={l}>{l}</li>)}</ul>
+
+      <H n="Claims" t="Claims this prototype does not make" />
+      <ul className="list-disc pl-5 space-y-0.5 text-xs">{CLAIMS_NOT_MADE.map(l => <li key={l}>{l}</li>)}</ul>
     </article>
   );
 };
